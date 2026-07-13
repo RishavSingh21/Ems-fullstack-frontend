@@ -6,6 +6,7 @@ function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterDepartment, setFilterDepartment] = useState("");
   const [editingId, setEditingId] = useState(null);
+  const [error, setError] = useState(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -13,16 +14,25 @@ function App() {
     salary: "",
   });
 
-  const API_URL = "https://ems-backend-c9fc.onrender.com/employees";
+  const API_URL = "http://localhost:5000/employees";
 
   useEffect(() => {
     getEmployees();
   }, []);
 
   const getEmployees = async () => {
-    const response = await fetch(API_URL);
-    const data = await response.json();
-    setEmployees(data);
+    try {
+      setError(null);
+      const response = await fetch(API_URL);
+      if (!response.ok) {
+        throw new Error(`API error ${response.status}`);
+      }
+      const data = await response.json();
+      setEmployees(data);
+    } catch (err) {
+      console.error("Failed to load employees:", err);
+      setError("Unable to load employees. Please check the backend API.");
+    }
   };
 
   const averageSalary =
@@ -47,40 +57,64 @@ function App() {
   const addEmployee = async (e) => {
     e.preventDefault();
 
-    await fetch(API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(formData),
-    });
-
-    setFormData({ name: "", department: "", salary: "" });
-    getEmployees();
+    try {
+      setError(null);
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+      if (!response.ok) {
+        throw new Error(`API error ${response.status}`);
+      }
+      setFormData({ name: "", department: "", salary: "" });
+      getEmployees();
+    } catch (err) {
+      console.error("Failed to add employee:", err);
+      setError("Unable to add employee. Please try again.");
+    }
   };
 
   const deleteEmployee = async (id) => {
-    await fetch(`${API_URL}/${id}`, {
-      method: "DELETE",
-    });
-
-    getEmployees();
+    try {
+      setError(null);
+      const response = await fetch(`${API_URL}/${id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        throw new Error(`API error ${response.status}`);
+      }
+      getEmployees();
+    } catch (err) {
+      console.error("Failed to delete employee:", err);
+      setError("Unable to delete employee. Please try again.");
+    }
   };
 
   const updateEmployee = async (e, id) => {
     e.preventDefault();
 
-    await fetch(`${API_URL}/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(formData),
-    });
-
-    setFormData({ name: "", department: "", salary: "" });
-    setEditingId(null);
-    getEmployees();
+    try {
+      setError(null);
+      const response = await fetch(`${API_URL}/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+      if (!response.ok) {
+        throw new Error(`API error ${response.status}`);
+      }
+      setFormData({ name: "", department: "", salary: "" });
+      setEditingId(null);
+      getEmployees();
+    } catch (err) {
+      console.error("Failed to update employee:", err);
+      setError("Unable to update employee. Please try again.");
+    }
   };
 
   const filteredEmployees = employees.filter((emp) => {
@@ -96,6 +130,7 @@ function App() {
 
   return (
     <div className="container">
+      {error && <div className="error-banner">{error}</div>}
       <h1>Employee Management System</h1>
       <p className="subtitle">
         Manage employee records, add new team members, and keep your data organized.
@@ -182,7 +217,7 @@ function App() {
           ) : (
             <div className="employee-grid">
               {filteredEmployees.map((employee) => (
-                <div key={employee.id} className="card">
+                <div key={employee._id} className="card">
                   <h3>{employee.name}</h3>
                   <p>Department: {employee.department}</p>
                   <p>
@@ -218,7 +253,7 @@ function App() {
           ) : (
             <div className="employee-grid">
               {filteredEmployees.map((employee) => (
-                <div key={employee.id} className="card">
+                <div key={employee._id} className="card">
                   <h3>{employee.name}</h3>
                   <p>Department: {employee.department}</p>
                   <p>
@@ -281,7 +316,7 @@ function App() {
                 <div className="empty-state">No employees found. Add one to get started!</div>
               ) : (
                 employees.map((employee) => (
-                  <div key={employee.id} className="card">
+                  <div key={employee._id} className="card">
                     <h3>{employee.name}</h3>
                     <p>Department: {employee.department}</p>
                     <p>
@@ -295,7 +330,7 @@ function App() {
                       <button
                         className="edit-btn"
                         onClick={() => {
-                          setEditingId(employee.id);
+                          setEditingId(employee._id);
                           setFormData({
                             name: employee.name,
                             department: employee.department,
@@ -307,7 +342,7 @@ function App() {
                       </button>
                       <button
                         className="delete-btn"
-                        onClick={() => deleteEmployee(employee.id)}
+                        onClick={() => deleteEmployee(employee._id)}
                       >
                         Delete
                       </button>
