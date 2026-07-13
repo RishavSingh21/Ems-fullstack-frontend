@@ -14,7 +14,7 @@ function App() {
     salary: "",
   });
 
-  const API_URL = "https://ems-backend-c9fc.onrender.com/employees";
+  const API_URL = "https://ems-backend-1-u33p.onrender.com/employees";
 
   useEffect(() => {
     getEmployees();
